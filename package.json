@@ -1,0 +1,13 @@
+{
+  "name": "us-county-election-map",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive US county presidential map (2008–2024) with a flip-finder, county economic profiles, and a data-grounded insights blog.",
+  "scripts": {
+    "build:data": "node build.js",
+    "build:site": "node assemble.js",
+    "build:insights": "node build-insights.js",
+    "build": "node assemble.js && node build-insights.js"
+  },
+  "license": "MIT"
+}

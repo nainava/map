@@ -1,0 +1,5 @@
+node_modules/
+# Raw BEA regional dump (~79MB) — re-fetch with the URLs in README; the merged
+# data/counties.json (committed) is all the site needs to build & run.
+data/bea/
+.DS_Store

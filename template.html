@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>US County Presidential Map · 2008–2024</title>
+<script>/*D3LIB*/</script>
+<script>/*TOPOLIB*/</script>
+<style>
+  :root{
+    --dem:#2166ac; --gop:#b2182b; --bg:#ffffff; --panel:#f7f8fa; --ink:#1c2026;
+    --muted:#6b7280; --line:#e4e7ec; --hi:#f59e0b; --nodata:#e5e7eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  #app{display:grid;grid-template-columns:330px 1fr;height:100vh}
+  #side{background:var(--panel);border-right:1px solid var(--line);padding:20px 18px;overflow-y:auto}
+  #side h1{font-size:17px;margin:0 0 2px}
+  #side .sub{color:var(--muted);font-size:12px;margin-bottom:18px}
+  .ilink{color:#2166ac;text-decoration:none;font-weight:600}
+  .ilink:hover{text-decoration:underline}
+  .grp{margin-bottom:18px;border-top:1px solid var(--line);padding-top:15px}
+  .grp:first-of-type{border-top:none;padding-top:0}
+  .grp h2{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 9px;font-weight:600}
+  .years{display:flex;gap:6px;flex-wrap:wrap}
+  .years button{background:#fff;color:var(--ink);border:1px solid var(--line);
+    padding:7px 11px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500}
+  .years button:hover{border-color:#c7ccd4}
+  .years button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  select{width:100%;background:#fff;color:var(--ink);border:1px solid var(--line);
+    border-radius:7px;padding:7px;font-size:13px}
+  .preset{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);
+    border:1px solid var(--line);border-radius:7px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:12px;font-weight:500}
+  .preset:hover{border-color:var(--hi)}
+  .preset.on{border-color:var(--hi);background:#fff7e6}
+  .preset small{display:block;color:var(--muted);margin-top:2px;font-weight:400}
+  .seqbuild{display:flex;gap:5px;margin-bottom:10px}
+  .seqbuild div{flex:1;text-align:center}
+  .seqbuild label{font-size:10px;color:var(--muted);display:block;margin-bottom:4px}
+  .seqbuild select{padding:5px 2px;text-align:center}
+  .count{font-size:13px;color:var(--muted);margin-top:4px}
+  .count b{color:var(--ink);font-size:20px}
+  /* comparison insight */
+  #insight{display:none;margin-top:12px}
+  .cmp-h{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:10px;margin:2px 0 5px;font-weight:600}
+  table.cmp{width:100%;border-collapse:collapse;font-size:12px}
+  table.cmp td{padding:3px 0;vertical-align:top}
+  table.cmp th{font-size:9px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);
+    font-weight:600;text-align:right;padding:0 0 4px 10px}
+  table.cmp th.l{text-align:left}
+  td.cl{color:var(--muted)}
+  td.cv{text-align:right;font-variant-numeric:tabular-nums;padding-left:10px;white-space:nowrap}
+  td.cv small{display:block;font-size:9px;color:#8a8f98;font-weight:400}
+  .ind{margin-top:9px;font-size:12px;color:var(--muted)}
+  .ind b{color:var(--ink)}
+  .note{margin-top:7px;font-size:10px;color:var(--muted);line-height:1.4}
+  .legend{display:flex;gap:16px;font-size:12px;margin-top:6px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .grad{height:12px;width:100%;border-radius:3px;margin:8px 0 4px;
+    background:linear-gradient(90deg,var(--dem),#dfe6ef 50%,var(--gop))}
+  .grad-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+  #map{position:relative;overflow:hidden;background:var(--bg)}
+  #map-canvas{display:block;width:100%;height:100%}
+  /* unified tooltip: square, hard edges, fixed width, wraps, never clipped */
+  #tip{position:absolute;pointer-events:none;background:#fff;border:1px solid #1c2026;
+    border-radius:0;padding:12px 14px;font-size:12px;width:264px;opacity:0;
+    z-index:5;color:var(--ink)}
+  #tip h3{margin:0 0 3px;font-size:14px}
+  #tip .st{color:var(--muted);font-size:11px;margin-bottom:9px}
+  #tip table{width:100%;border-collapse:collapse;table-layout:fixed}
+  #tip td{padding:2px 0;vertical-align:top}
+  #tip td.k{color:var(--muted);width:44%;white-space:nowrap}
+  #tip td.v{text-align:right;font-variant-numeric:tabular-nums;white-space:normal;word-break:break-word}
+  #tip .seqrow{margin-top:10px;display:flex;gap:4px}
+  #tip .yr{flex:1;text-align:center;border-radius:0;padding:4px 0;font-size:10px;font-weight:700;color:#fff}
+  #tip .yr small{display:block;font-weight:400;opacity:.85;font-size:9px;margin-top:1px}
+  .foot{color:var(--muted);font-size:11px;margin-top:14px;line-height:1.55}
+  .foot b{color:#4b5563}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="side">
+    <h1>US Presidential Map</h1>
+    <div class="sub">County results 2008–2024 · flip finder · <a class="ilink" href="insights.html">Insights →</a></div>
+
+    <div class="grp">
+      <h2>Map year</h2>
+      <div class="years" id="years"></div>
+    </div>
+
+    <div class="grp">
+      <h2>Highlight by flip pattern</h2>
+      <div id="presets"></div>
+      <h2 style="margin-top:15px">Custom sequence</h2>
+      <div class="seqbuild" id="seqbuild"></div>
+      <div class="count" id="count"></div>
+      <div id="insight"></div>
+    </div>
+
+    <div class="grp">
+      <h2>Legend</h2>
+      <div class="legend">
+        <span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--dem)"></i>Democrat</span>
+        <span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--gop)"></i>Republican</span>
+      </div>
+      <div class="grad"></div>
+      <div class="grad-lbl"><span>Dem landslide</span><span>close</span><span>GOP landslide</span></div>
+    </div>
+
+    <div class="foot">
+      Election results via tonmcg (2008–2024); population, income, GDP &amp;
+      industry via <b>BEA Regional</b> (single source).
+      <div style="margin-top:6px">Sequences read L→R: 2008 · 2012 · 2016 · 2020 · 2024.</div>
+    </div>
+  </div>
+
+  <div id="map">
+    <canvas id="map-canvas"></canvas>
+    <div id="tip"></div>
+  </div>
+</div>
+
+<script>/*DATA*/</script>
+<script>
+const YEARS=[2008,2012,2016,2020,2024];
+const PRESETS=[
+  {label:'Show all counties',desc:'Clear the highlight',clear:true},
+  {label:'Obama→Trump→Biden→Trump',desc:'D · D · R · D · R  (the true pivot counties)',pat:'DDRDR'},
+  {label:'Obama → Trump (stayed red)',desc:'Voted Obama, flipped to Trump, never came back',pat:'..R.R',extra:s=>s[0]==='D'||s[1]==='D'},
+  {label:'Trump → Biden → Trump',desc:'R · D · R in 2016·2020·2024',pat:'..RDR'},
+  {label:'Solid Democrat (all 5)',desc:'D · D · D · D · D',pat:'DDDDD'},
+  {label:'Solid Republican (all 5)',desc:'R · R · R · R · R',pat:'RRRRR'},
+  {label:'Any county that flipped ≥2×',desc:'Changed party 2 or more times',fn:s=>flips(s)>=2},
+];
+function flips(seq){let f=0;for(let i=1;i<seq.length;i++){if(seq[i]!=='-'&&seq[i-1]!=='-'&&seq[i]!==seq[i-1])f++;}return f;}
+function matchPat(seq,pat){for(let i=0;i<5;i++){if(pat[i]!=='.'&&pat[i]!==seq[i])return false;}return true;}
+
+let year=2024, activePreset=null, custom=['.','.','.','.','.'], minFlips=0;
+const customEngaged=()=>custom.some(c=>c!=='.');
+const filterEngaged=()=>minFlips>0||(activePreset!=null&&!PRESETS[activePreset].clear)||customEngaged();
+
+// ---- national baselines (computed once) ----
+// Per-capita metrics are population-weighted (ΣGDP/Σpop), so tiny-population
+// counties with extreme ratios don't skew the baseline. Population is a plain
+// per-county mean.
+// Simple avg = mean per county. Weighted avg = per resident (population-weighted).
+function statsFor(list){
+  let popSum=0,popN=0, gS=0,gN=0,gWn=0,gWd=0, iS=0,iN=0,iWn=0,iWd=0;
+  const each=r=>{
+    if(r.pop){popSum+=r.pop;popN++;}
+    if(r.gdppc!=null){gS+=r.gdppc;gN++;}
+    if(r.gdp&&r.pop){gWn+=r.gdp;gWd+=r.pop;}
+    if(r.pci!=null){iS+=r.pci;iN++;}
+    if(r.pci!=null&&r.pop){iWn+=r.pci*r.pop;iWd+=r.pop;}
+  };
+  if(list) list.forEach(each); else for(const k in COUNTY_DATA) each(COUNTY_DATA[k]);
+  return {
+    popMean: popN?popSum/popN:null,
+    gdppcSimple: gN?gS/gN:null, gdppcW: gWd?gWn/gWd:null,
+    pciSimple: iN?iS/iN:null,   pciW: iWd?iWn/iWd:null,
+  };
+}
+const NAT=statsFor(null);
+NAT.totalPop=(function(){let t=0;for(const k in COUNTY_DATA){const r=COUNTY_DATA[k];if(r.pop)t+=r.pop;}return t;})();
+
+// ---- build canvas map (canvas = smooth pan/zoom for 3k+ counties) ----
+// us-atlas counties-albers-10m is pre-projected, so geoPath needs no projection.
+const W=975,H=610;
+const mapEl=document.getElementById('map');
+const canvas=document.getElementById('map-canvas');
+const ctx=canvas.getContext('2d');
+const counties=topojson.feature(US_TOPO,US_TOPO.objects.counties).features;
+const countyMesh=topojson.mesh(US_TOPO,US_TOPO.objects.counties,(a,b)=>a!==b);
+const stateMesh=topojson.mesh(US_TOPO,US_TOPO.objects.states,(a,b)=>a!==b);
+const geo=d3.geoPath();
+
+// hidden picking layer (base coords) drawn ONCE for O(1) hover hit-testing
+const PK=2, pk=document.createElement('canvas');
+pk.width=W*PK; pk.height=H*PK;
+const pctx=pk.getContext('2d',{willReadFrequently:true});
+pctx.scale(PK,PK); geo.context(pctx);
+counties.forEach((f,i)=>{const n=i+1;pctx.beginPath();geo(f);
+  pctx.fillStyle=`rgb(${n&255},${(n>>8)&255},${(n>>16)&255})`;pctx.fill();});
+geo.context(null);
+
+let transform=d3.zoomIdentity, baseK=1, baseX=0, baseY=0, cssW=0, cssH=0;
+function resize(){
+  const r=mapEl.getBoundingClientRect(); cssW=r.width; cssH=r.height;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(cssW*dpr); canvas.height=Math.round(cssH*dpr);
+  canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
+  baseK=Math.min(cssW/W,cssH/H); baseX=(cssW-W*baseK)/2; baseY=(cssH-H*baseK)/2;
+  draw();
+}
+function draw(){
+  const dpr=window.devicePixelRatio||1;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.scale(dpr,dpr);
+  ctx.translate(transform.x,transform.y); ctx.scale(transform.k,transform.k);
+  ctx.translate(baseX,baseY); ctx.scale(baseK,baseK);
+  geo.context(ctx);
+  const eng=filterEngaged(), k=transform.k*baseK;
+  for(let i=0;i<counties.length;i++){
+    const f=counties[i], r=COUNTY_DATA[f.id];
+    ctx.beginPath(); geo(f);
+    ctx.globalAlpha=(eng&&!(r&&matchCounty(r.seq)))?0.12:1;
+    ctx.fillStyle=colorFor(f); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  ctx.beginPath(); geo(countyMesh); ctx.lineWidth=0.3/k; ctx.strokeStyle='#fff';     ctx.stroke();
+  ctx.beginPath(); geo(stateMesh);  ctx.lineWidth=0.7/k; ctx.strokeStyle='#8b93a0';  ctx.stroke();
+  if(eng){ ctx.lineWidth=0.9/k; ctx.strokeStyle='#111827';
+    for(let i=0;i<counties.length;i++){const f=counties[i],r=COUNTY_DATA[f.id];
+      if(r&&matchCounty(r.seq)){ctx.beginPath();geo(f);ctx.stroke();}}}
+  geo.context(null);
+}
+d3.select(canvas).call(d3.zoom().scaleExtent([1,12]).on('zoom',e=>{transform=e.transform;draw();}));
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect();
+  let x=(e.clientX-r.left-transform.x)/transform.k;
+  let y=(e.clientY-r.top -transform.y)/transform.k;
+  x=(x-baseX)/baseK; y=(y-baseY)/baseK;
+  if(x<0||y<0||x>W||y>H){hideTip();return;}
+  const p=pctx.getImageData(Math.round(x*PK),Math.round(y*PK),1,1).data;
+  const idx=(p[0]|(p[1]<<8)|(p[2]<<16))-1;
+  if(idx<0||idx>=counties.length){hideTip();return;}
+  const f=counties[idx];
+  // In filter view, only highlighted (matching) counties are hoverable.
+  if(filterEngaged()){const r=COUNTY_DATA[f.id]; if(!r||!matchCounty(r.seq)){hideTip();return;}}
+  showTip(e,f);
+});
+canvas.addEventListener('mouseleave',hideTip);
+window.addEventListener('resize',resize);
+
+function colorFor(f){
+  const r=COUNTY_DATA[f.id]; if(!r) return '#e5e7eb';
+  const w=r.e[year]; if(!w) return '#e5e7eb';
+  const m=Math.min(Math.abs(r.m[year]||0),0.6)/0.6;
+  const base=w==='D'?d3.rgb('#2166ac'):d3.rgb('#b2182b');
+  return d3.interpolateRgb(d3.rgb('#dfe6ef'),base)(0.25+0.75*m);
+}
+function matchCounty(seq){
+  if(minFlips>0)return flips(seq)>=minFlips;
+  if(activePreset!=null&&!PRESETS[activePreset].clear){
+    const p=PRESETS[activePreset];
+    if(p.fn)return p.fn(seq);
+    if(!matchPat(seq,p.pat))return false;
+    if(p.extra)return p.extra(seq);
+    return true;
+  }
+  if(customEngaged())return matchPat(seq,custom.join(''));
+  return true;
+}
+function render(){
+  const eng=filterEngaged();
+  const M=[];
+  for(const f of counties){const r=COUNTY_DATA[f.id]; if(!r)continue; if(!eng||matchCounty(r.seq))M.push(r);}
+  updateInsight(eng,M);
+  draw();
+}
+
+// ---- comparison insight ----
+const fmt=n=>n==null?'—':Math.round(n).toLocaleString('en-US');
+const usd=n=>n==null?'—':'$'+Math.round(n).toLocaleString('en-US');
+const fmtBig=n=>n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+'M':n>=1e3?Math.round(n/1e3)+'k':''+n;
+function mean(arr,f){let s=0,c=0;for(const r of arr){const v=f(r);if(v!=null){s+=v;c++;}}return c?s/c:null;}
+function mode(arr){const m={};let best=null,bc=0;for(const x of arr){if(!x)continue;m[x]=(m[x]||0)+1;if(m[x]>bc){bc=m[x];best=x;}}return best;}
+function delta(val,base){
+  if(val==null||base==null)return '';
+  const d=(val-base)/base*100;
+  return `<small>${d>=0?'▲':'▼'}${Math.abs(d).toFixed(0)}% vs US</small>`;
+}
+function valCell(val,base,isUsd,showDelta){
+  if(val==null)return '<td class="cv">—</td>';
+  return `<td class="cv">${isUsd?usd(val):fmt(val)}${showDelta?delta(val,base):''}</td>`;
+}
+function updateInsight(eng,M){
+  const cEl=document.getElementById('count'), iEl=document.getElementById('insight');
+  const totalPop=M.reduce((s,r)=>s+(r.pop||0),0);
+  const s=statsFor(M);
+  cEl.innerHTML=eng
+    ? `<b>${M.length.toLocaleString()}</b> counties · ${fmtBig(totalPop)} people · ${(totalPop/NAT.totalPop*100).toFixed(1)}% of US`
+    : `<b>All ${M.length.toLocaleString()}</b> US counties · ${fmtBig(totalPop)} people`;
+  const hdr=eng?'Averages across these counties':'National averages (all counties)';
+  let html=`<div class="cmp-h">${hdr}</div>`
+    +'<table class="cmp"><tr><th class="l"></th><th>Simple avg</th><th>Pop-weighted</th></tr>'
+    +`<tr><td class="cl">GDP / capita</td>${valCell(s.gdppcSimple,NAT.gdppcSimple,true,eng)}${valCell(s.gdppcW,NAT.gdppcW,true,eng)}</tr>`
+    +`<tr><td class="cl">Income / capita</td>${valCell(s.pciSimple,NAT.pciSimple,true,eng)}${valCell(s.pciW,NAT.pciW,true,eng)}</tr>`
+    +`<tr><td class="cl">Population</td>${valCell(s.popMean,NAT.popMean,false,eng)}<td class="cv">—</td></tr>`
+    +'</table>';
+  const ind=mode(M.map(r=>r.ind));
+  if(ind)html+=`<div class="ind">Top industry: <b>${ind}</b></div>`;
+  html+='<div class="note">Simple = mean per county · Weighted = per resident (population-weighted)'
+    +(eng?' · ▲▼ vs US average':'')+'</div>';
+  iEl.innerHTML=html; iEl.style.display='block';
+}
+
+// ---- tooltip ----
+const tip=document.getElementById('tip');
+function showTip(e,f){
+  const r=COUNTY_DATA[f.id]; if(!r){hideTip();return;}
+  const seqHtml=YEARS.map(y=>{
+    const w=r.e[y]; const bg=w==='D'?'#2166ac':w==='R'?'#b2182b':'#9aa0aa';
+    const mg=r.m[y]!=null?(Math.abs(r.m[y])*100).toFixed(0)+'pt':'';
+    return `<div class="yr" style="background:${bg}">${w||'–'}<small>${y}<br>${mg}</small></div>`;
+  }).join('');
+  tip.innerHTML=`<h3>${r.n||'?'} County</h3>
+    <div class="st">${r.s||''} · FIPS ${f.id}</div>
+    <table>
+      <tr><td class="k">Population</td><td class="v">${fmt(r.pop)}</td></tr>
+      <tr><td class="k">GDP</td><td class="v">${r.gdp?'$'+fmtBig(r.gdp):'—'}</td></tr>
+      <tr><td class="k">GDP / capita</td><td class="v">${usd(r.gdppc)}</td></tr>
+      <tr><td class="k">Income / capita</td><td class="v">${usd(r.pci)}</td></tr>
+      <tr><td class="k">Key industry</td><td class="v">${r.ind||'—'}</td></tr>
+    </table>
+    <div class="seqrow">${seqHtml}</div>`;
+  tip.style.opacity=1;
+  const box=mapEl.getBoundingClientRect();
+  const tw=tip.offsetWidth, th=tip.offsetHeight, pad=12;
+  let x=e.clientX-box.left+16, y=e.clientY-box.top+16;
+  if(x+tw+pad>box.width)  x=e.clientX-box.left-tw-16;
+  if(x<pad) x=pad;
+  if(y+th+pad>box.height) y=box.height-th-pad;
+  if(y<pad) y=pad;
+  tip.style.left=x+'px'; tip.style.top=y+'px';
+}
+function hideTip(){tip.style.opacity=0;}
+
+// ---- controls ----
+const yearsEl=document.getElementById('years');
+YEARS.forEach(y=>{
+  const b=document.createElement('button');b.textContent=y;if(y===year)b.className='on';
+  b.onclick=()=>{year=y;[...yearsEl.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');render();};
+  yearsEl.appendChild(b);
+});
+const presetsEl=document.getElementById('presets');
+PRESETS.forEach((p,i)=>{
+  const b=document.createElement('button');b.className='preset';
+  b.innerHTML=`${p.label}<small>${p.desc}</small>`;
+  b.onclick=()=>{
+    custom=['.','.','.','.','.'];syncCustom(); minFlips=0;
+    activePreset=p.clear?null:i;
+    [...presetsEl.children].forEach(c=>c.classList.remove('on'));
+    if(!p.clear)b.classList.add('on');
+    render();
+  };
+  presetsEl.appendChild(b);
+});
+const sb=document.getElementById('seqbuild');
+YEARS.forEach((y,i)=>{
+  const wrap=document.createElement('div');
+  wrap.innerHTML=`<label>${y}</label>`;
+  const s=document.createElement('select');
+  [['.','Any'],['D','Dem'],['R','GOP']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s.appendChild(o);});
+  s.onchange=()=>{custom[i]=s.value;activePreset=null;minFlips=0;[...presetsEl.children].forEach(c=>c.classList.remove('on'));render();};
+  wrap.appendChild(s); sb.appendChild(wrap);
+});
+function syncCustom(){[...sb.querySelectorAll('select')].forEach((s,i)=>s.value=custom[i]);}
+
+// ---- deep link:  index.html?y=2024&pat=DDRDR   or   ?y=2024&min=2 ----
+(function(){
+  const q=new URLSearchParams(location.search);
+  const y=+q.get('y');
+  if(YEARS.includes(y)){year=y;[...yearsEl.children].forEach(c=>c.classList.toggle('on',+c.textContent===y));}
+  const pat=q.get('pat');
+  if(pat&&/^[DR.]{5}$/.test(pat.toUpperCase())){custom=pat.toUpperCase().split('');syncCustom();}
+  const mn=+q.get('min'); if(mn>=1)minFlips=mn;
+})();
+
+resize();
+render();
+</script>
+</body>
+</html>
