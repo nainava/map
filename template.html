@@ -8,32 +8,34 @@
 <script>/*TOPOLIB*/</script>
 <style>
   :root{
-    --dem:#2166ac; --gop:#b2182b; --bg:#ffffff; --panel:#f7f8fa; --ink:#1c2026;
-    --muted:#6b7280; --line:#e4e7ec; --hi:#f59e0b; --nodata:#e5e7eb;
+    --dem:#2166ac; --gop:#b2182b; --bg:#ffffff; --panel:#ffffff; --ink:#121417;
+    --muted:#6b7280; --line:#d7dade; --hi:#f59e0b; --accent:#e3120b; --nodata:#e5e7eb;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
     font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   #app{display:grid;grid-template-columns:330px 1fr;height:100vh}
-  #side{background:var(--panel);border-right:1px solid var(--line);padding:20px 18px;overflow-y:auto}
-  #side h1{font-size:17px;margin:0 0 2px}
+  #side{background:var(--panel);border-right:1px solid var(--line);border-top:3px solid var(--accent);
+    padding:20px 20px;overflow-y:auto}
+  #side h1{font-family:Georgia,"Times New Roman",serif;font-size:21px;font-weight:700;
+    letter-spacing:-.01em;line-height:1.1;margin:0 0 3px}
   #side .sub{color:var(--muted);font-size:12px;margin-bottom:18px}
-  .ilink{color:#2166ac;text-decoration:none;font-weight:600}
+  .ilink{color:var(--accent);text-decoration:none;font-weight:600}
   .ilink:hover{text-decoration:underline}
   .grp{margin-bottom:18px;border-top:1px solid var(--line);padding-top:15px}
   .grp:first-of-type{border-top:none;padding-top:0}
-  .grp h2{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 9px;font-weight:600}
+  .grp h2{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#3a3f47;margin:0 0 9px;font-weight:700}
   .years{display:flex;gap:6px;flex-wrap:wrap}
   .years button{background:#fff;color:var(--ink);border:1px solid var(--line);
-    padding:7px 11px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500}
-  .years button:hover{border-color:#c7ccd4}
-  .years button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+    padding:7px 11px;border-radius:0;cursor:pointer;font-size:12px;font-weight:500}
+  .years button:hover{border-color:#9aa0a8}
+  .years button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   select{width:100%;background:#fff;color:var(--ink);border:1px solid var(--line);
-    border-radius:7px;padding:7px;font-size:13px}
+    border-radius:0;padding:7px;font-size:13px}
   .preset{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);
-    border:1px solid var(--line);border-radius:7px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:12px;font-weight:500}
-  .preset:hover{border-color:var(--hi)}
-  .preset.on{border-color:var(--hi);background:#fff7e6}
+    border:1px solid var(--line);border-radius:0;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:12px;font-weight:500}
+  .preset:hover{border-color:var(--accent)}
+  .preset.on{border-color:var(--accent);background:#fdecea;box-shadow:inset 3px 0 0 var(--accent)}
   .preset small{display:block;color:var(--muted);margin-top:2px;font-weight:400}
   .seqbuild{display:flex;gap:5px;margin-bottom:10px}
   .seqbuild div{flex:1;text-align:center}
@@ -57,7 +59,7 @@
   .note{margin-top:7px;font-size:10px;color:var(--muted);line-height:1.4}
   .legend{display:flex;gap:16px;font-size:12px;margin-top:6px;flex-wrap:wrap}
   .legend span{display:inline-flex;align-items:center;gap:6px}
-  .grad{height:12px;width:100%;border-radius:3px;margin:8px 0 4px;
+  .grad{height:12px;width:100%;border-radius:0;margin:8px 0 4px;
     background:linear-gradient(90deg,var(--dem),#dfe6ef 50%,var(--gop))}
   .grad-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
   #map{position:relative;overflow:hidden;background:var(--bg)}
@@ -102,8 +104,8 @@
     <div class="grp">
       <h2>Legend</h2>
       <div class="legend">
-        <span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--dem)"></i>Democrat</span>
-        <span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--gop)"></i>Republican</span>
+        <span><i style="display:inline-block;width:12px;height:12px;background:var(--dem)"></i>Democrat</span>
+        <span><i style="display:inline-block;width:12px;height:12px;background:var(--gop)"></i>Republican</span>
       </div>
       <div class="grad"></div>
       <div class="grad-lbl"><span>Dem landslide</span><span>close</span><span>GOP landslide</span></div>
@@ -127,12 +129,13 @@
 const YEARS=[2008,2012,2016,2020,2024];
 const PRESETS=[
   {label:'Show all counties',desc:'Clear the highlight',clear:true},
-  {label:'Obama→Trump→Biden→Trump',desc:'D · D · R · D · R  (the true pivot counties)',pat:'DDRDR'},
-  {label:'Obama → Trump (stayed red)',desc:'Voted Obama, flipped to Trump, never came back',pat:'..R.R',extra:s=>s[0]==='D'||s[1]==='D'},
-  {label:'Trump → Biden → Trump',desc:'R · D · R in 2016·2020·2024',pat:'..RDR'},
-  {label:'Solid Democrat (all 5)',desc:'D · D · D · D · D',pat:'DDDDD'},
   {label:'Solid Republican (all 5)',desc:'R · R · R · R · R',pat:'RRRRR'},
-  {label:'Any county that flipped ≥2×',desc:'Changed party 2 or more times',fn:s=>flips(s)>=2},
+  {label:'Solid Democrat (all 5)',desc:'D · D · D · D · D',pat:'DDDDD'},
+  {label:'Obama → Trump (stayed red)',desc:'Voted Obama, flipped to Trump, never came back',pat:'..R.R',extra:s=>s[0]==='D'||s[1]==='D'},
+  {label:'GOP → Dem (stayed blue)',desc:'Voted Romney/GOP, then flipped Democratic and stayed',pat:'..D.D',extra:s=>s[0]==='R'||s[1]==='R'},
+  {label:'Trump → Biden → Trump',desc:'R · D · R in 2016·2020·2024',pat:'..RDR'},
+  {label:'Swing · flipped ≥ 2×',desc:'Changed party in 2+ of the last 4 elections',fn:s=>flips(s)>=2},
+  {label:'Serial swing · flipped ≥ 3×',desc:'Flipped 3+ times — includes the Obama·Trump·Biden·Trump pivots',fn:s=>flips(s)>=3},
 ];
 function flips(seq){let f=0;for(let i=1;i<seq.length;i++){if(seq[i]!=='-'&&seq[i-1]!=='-'&&seq[i]!==seq[i-1])f++;}return f;}
 function matchPat(seq,pat){for(let i=0;i<5;i++){if(pat[i]!=='.'&&pat[i]!==seq[i])return false;}return true;}
@@ -211,7 +214,7 @@ function draw(){
   }
   ctx.globalAlpha=1;
   ctx.beginPath(); geo(countyMesh); ctx.lineWidth=0.3/k; ctx.strokeStyle='#fff';     ctx.stroke();
-  ctx.beginPath(); geo(stateMesh);  ctx.lineWidth=0.7/k; ctx.strokeStyle='#8b93a0';  ctx.stroke();
+  ctx.beginPath(); geo(stateMesh);  ctx.lineWidth=1.2/k; ctx.strokeStyle='#6b7280';  ctx.stroke();
   if(eng){ ctx.lineWidth=0.9/k; ctx.strokeStyle='#111827';
     for(let i=0;i<counties.length;i++){const f=counties[i],r=COUNTY_DATA[f.id];
       if(r&&matchCounty(r.seq)){ctx.beginPath();geo(f);ctx.stroke();}}}
@@ -266,6 +269,8 @@ function render(){
 const fmt=n=>n==null?'—':Math.round(n).toLocaleString('en-US');
 const usd=n=>n==null?'—':'$'+Math.round(n).toLocaleString('en-US');
 const fmtBig=n=>n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+'M':n>=1e3?Math.round(n/1e3)+'k':''+n;
+const empRow=(rank,name,pct)=>name?`${rank}. ${name}${pct!=null?` <span style="color:#8a8f98">${pct}%</span>`:''}`:'';
+const empCell=r=>{const a=empRow(1,r.ind,r.indp),b=empRow(2,r.ind2,r.ind2p);return a?a+(b?'<br>'+b:''):'—';};
 function mean(arr,f){let s=0,c=0;for(const r of arr){const v=f(r);if(v!=null){s+=v;c++;}}return c?s/c:null;}
 function mode(arr){const m={};let best=null,bc=0;for(const x of arr){if(!x)continue;m[x]=(m[x]||0)+1;if(m[x]>bc){bc=m[x];best=x;}}return best;}
 function delta(val,base){
@@ -292,7 +297,7 @@ function updateInsight(eng,M){
     +`<tr><td class="cl">Population</td>${valCell(s.popMean,NAT.popMean,false,eng)}<td class="cv">—</td></tr>`
     +'</table>';
   const ind=mode(M.map(r=>r.ind));
-  if(ind)html+=`<div class="ind">Top industry: <b>${ind}</b></div>`;
+  if(ind)html+=`<div class="ind">Most common top employer: <b>${ind}</b></div>`;
   html+='<div class="note">Simple = mean per county · Weighted = per resident (population-weighted)'
     +(eng?' · ▲▼ vs US average':'')+'</div>';
   iEl.innerHTML=html; iEl.style.display='block';
@@ -314,7 +319,7 @@ function showTip(e,f){
       <tr><td class="k">GDP</td><td class="v">${r.gdp?'$'+fmtBig(r.gdp):'—'}</td></tr>
       <tr><td class="k">GDP / capita</td><td class="v">${usd(r.gdppc)}</td></tr>
       <tr><td class="k">Income / capita</td><td class="v">${usd(r.pci)}</td></tr>
-      <tr><td class="k">Key industry</td><td class="v">${r.ind||'—'}</td></tr>
+      <tr><td class="k">Biggest employers</td><td class="v">${empCell(r)}</td></tr>
     </table>
     <div class="seqrow">${seqHtml}</div>`;
   tip.style.opacity=1;
